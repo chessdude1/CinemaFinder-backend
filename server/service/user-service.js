@@ -9,15 +9,18 @@ const ApiError = require('../exceptions/api-error');
 
 
 class UserService {
-    async registration(email, password) {
+    async registration(email, password, favoriteFilms, fileName) {
         const candidate = await UserModel.findOne({ email })
         if (candidate) {
             throw ApiError.BadRequest(`Пользователь с почтовым адресом ${email} уже существует`)
         }
         const hashPassword = await bcrypt.hash(password, 3);
         const activationLink = uuid.v4(); // v34fa-asfasf-142saf-sa-asf
-
-        const user = await UserModel.create({ email, password: hashPassword, activationLink })
+        let favoriteFilmsDB = [];
+        if (favoriteFilms) {
+            favoriteFilmsDB = favoriteFilms
+        }
+        const user = await UserModel.create({ email, password: hashPassword, activationLink, favoriteFilms: favoriteFilmsDB, picture: fileName })
         await mailService.sendActivationMail(email, `${process.env.API_URL}/api/activate/${activationLink}`);
 
         const userDto = new UserDto(user); // id, email, isActivated
@@ -80,11 +83,29 @@ class UserService {
     }
 
     async getUser(refreshToken) {
+        if (!refreshToken) {
+            throw ApiError.UnauthorizedError();
+        }
         const token = await TokenModel.findOne({ refreshToken })
         const userId = token.user
+        if (!userId) {
+            throw ApiError.UnauthorizedError();
+        }
         const user = await UserModel.findOne({ _id: userId })
-        console.log(user)
         return user;
+    }
+
+    async updateUser(user) {
+        if (!user) {
+            throw ApiError.BadRequest('Пользователь не найден')
+        }
+        const test = await UserModel.findOne({ _id: user._id })
+        console.log(test)
+        const updatedUser = await UserModel.findByIdAndUpdate(user._id, user, { new: true });
+        if (!updatedUser) {
+            throw ApiError.BadRequest('Пользователь не найден')
+        }
+        return updatedUser
     }
 
 }

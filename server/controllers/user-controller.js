@@ -1,6 +1,7 @@
 const userService = require('../service/user-service');
 const { validationResult } = require('express-validator');
 const ApiError = require('../exceptions/api-error');
+const fileService = require("../service/fileService");
 
 class UserController {
     async registration(req, res, next) {
@@ -9,8 +10,11 @@ class UserController {
             if (!errors.isEmpty()) {
                 return next(ApiError.BadRequest('Ошибка при валидации', errors.array()))
             }
-            const { email, password } = req.body;
-            const userData = await userService.registration(email, password);
+            const picture = req.files.picture
+            const { email, password, favoriteFilms } = req.body;
+            const fileName = fileService.saveFile(picture)
+            const userData = await userService.registration(email, password, favoriteFilms, fileName);
+
             res.cookie('refreshToken', userData.refreshToken, { maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true })
             return res.json(userData);
         } catch (e) {
@@ -75,6 +79,16 @@ class UserController {
             const { refreshToken } = req.cookies;
             const users = await userService.getUser(refreshToken);
             return res.json(users);
+        } catch (e) {
+            next(e);
+        }
+    }
+
+    async updateUser(req, res, next) {
+        try {
+            const { user } = req.body;
+            const updatedUser = await userService.updateUser(user);
+            return res.json(updatedUser);
         } catch (e) {
             next(e);
         }
