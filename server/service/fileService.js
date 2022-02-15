@@ -6,7 +6,6 @@ class FileService {
     try {
       const fileName = uuid.v4() + '.jpg';
       const filePath = path.resolve('static', fileName)
-      console.log(filePath)
       file.mv(filePath)
       return fileName
     } catch (e) {

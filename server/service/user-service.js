@@ -99,9 +99,13 @@ class UserService {
         if (!user) {
             throw ApiError.BadRequest('Пользователь не найден')
         }
-        const test = await UserModel.findOne({ _id: user._id })
-        console.log(test)
-        const updatedUser = await UserModel.findByIdAndUpdate(user._id, user, { new: true });
+        let findId = ''
+        if (user.id) {
+            findId = user.id
+        } else {
+            findId = user._id
+        }
+        const updatedUser = await UserModel.findByIdAndUpdate(findId, user, { new: true });
         if (!updatedUser) {
             throw ApiError.BadRequest('Пользователь не найден')
         }
