@@ -10,13 +10,13 @@ class UserController {
             if (!errors.isEmpty()) {
                 return next(ApiError.BadRequest('Ошибка при валидации', errors.array()))
             }
-            const { email, password, favoriteFilms } = req.body;
+            const { email, password, favoriteFilms, name } = req.body;
             const fileName = '';
             if (req.files) {
                 const picture = req.files.picture
                 fileName = fileService.saveFile(picture)
             }
-            const userData = await userService.registration(email, password, favoriteFilms, fileName);
+            const userData = await userService.registration(email, password, favoriteFilms, fileName, name);
 
             res.cookie('refreshToken', userData.refreshToken, { maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true })
             return res.json(userData);
