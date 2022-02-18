@@ -11,9 +11,10 @@ class UserController {
                 return next(ApiError.BadRequest('Ошибка при валидации', errors.array()))
             }
             const { email, password, favoriteFilms, name } = req.body;
-            const fileName = '';
+            let fileName = '';
             if (req.files) {
                 const picture = req.files.picture
+                console.log(picture)
                 fileName = fileService.saveFile(picture)
             }
             const userData = await userService.registration(email, password, favoriteFilms, fileName, name);
