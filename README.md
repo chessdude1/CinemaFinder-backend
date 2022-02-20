@@ -54,7 +54,7 @@
     }
     // return object with all fields of user
 -   /user/picture
--    methods: post
+    methods: post
     // accepts an object type : 
     { id: String [required] ,
         picture: File [required] ,
