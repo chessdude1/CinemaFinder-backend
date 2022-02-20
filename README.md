@@ -12,7 +12,7 @@
     accepts: { email : String [required],  password : String [required]}
 - registration
     methods: post
-    accepts: { email : String [required] unique, password : String [required] , favoriteFilms: Array<strings>, picture : string} 
+    accepts: { email : String [required] unique, password : String [required], name: String [required] , favoriteFilms: Array<strings>, picture : string} 
     // picture can be send using form data
 - /activate/:link
     methods: get
@@ -33,6 +33,7 @@
     _id: String
     _v : 0
     }>
+
 - /user
     methods: post
     // accepts an object type : 
@@ -45,4 +46,18 @@
         _id: String [required]
         _v : 0
     }
+-   /user/password
+    methods: post
+    // accepts an object type : 
+    { id: String [required] ,
+        password:  String [required],
+    }
+    // return object with all fields of user
+-   /user/picture
+-    methods: post
+    // accepts an object type : 
+    { id: String [required] ,
+        picture: File [required] ,
+    }
+    // return object with all fields of user
     // if field if dont match with origin user._id key loss may occur
