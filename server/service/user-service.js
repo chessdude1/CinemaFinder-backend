@@ -19,7 +19,7 @@ class UserService {
             throw ApiError.BadRequest(`Отсутствует имя пользователя`)
         }
         const hashPassword = await bcrypt.hash(password, 3);
-        const activationLink = uuid.v4(); // v34fa-asfasf-142saf-sa-asf
+        const activationLink = uuid.v4();
         let favoriteFilmsDB = [];
         if (favoriteFilms) {
             favoriteFilmsDB = favoriteFilms
@@ -27,7 +27,7 @@ class UserService {
         const user = await UserModel.create({ email, name: name, password: hashPassword, activationLink, favoriteFilms: favoriteFilmsDB, picture: fileName })
         await mailService.sendActivationMail(email, `${process.env.API_URL}/api/activate/${activationLink}`);
 
-        const userDto = new UserDto(user); // id, email, isActivated
+        const userDto = new UserDto(user);
         const tokens = tokenService.generateTokens({ ...userDto });
         await tokenService.saveToken(userDto.id, tokens.refreshToken);
         if (user.picture) {
@@ -126,6 +126,34 @@ class UserService {
         return updatedUser
     }
 
+    async updatePicture(id, picture) {
+        const userBeforeChangedPicture = await UserModel.findOne({ _id: id });
+        if (!userBeforeChangedPicture) {
+            throw ApiError.BadRequest('Пользователь не найден')
+        }
+
+        await UserModel.updateOne({ _id: id }, { $set: { picture, } })
+        const userWithUpdatedPicture = await UserModel.findOne({ _id: id });
+        if (!userWithUpdatedPicture) {
+            throw ApiError.BadRequest('Пользователь не найден')
+        }
+        return userWithUpdatedPicture
+    }
+
+    async updatePassword(id, password) {
+        const userBeforeChangePassword = await UserModel.findOne({ _id: id });
+        if (!userBeforeChangePassword) {
+            throw ApiError.BadRequest('Пользователь не найден')
+        }
+
+        const hashPassword = await bcrypt.hash(password, 3);
+        await UserModel.updateOne({ _id: id }, { $set: { password: hashPassword } })
+        const userWithUpdatedPassword = await UserModel.findOne({ _id: id });
+        if (!userWithUpdatedPassword) {
+            throw ApiError.BadRequest('Пользователь не найден')
+        }
+        return userWithUpdatedPassword
+    }
 }
 
 module.exports = new UserService();
