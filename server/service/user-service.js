@@ -5,6 +5,7 @@ const uuid = require('uuid');
 const mailService = require('./mail-service');
 const tokenService = require('./token-service');
 const UserDto = require('../dtos/user-dto');
+const UserDtoPicture = require('../dtos/user-dto-picture');
 const ApiError = require('../exceptions/api-error');
 
 
@@ -14,21 +15,27 @@ class UserService {
         if (candidate) {
             throw ApiError.BadRequest(`Пользователь с почтовым адресом ${email} уже существует`)
         }
+        if (!name) {
+            throw ApiError.BadRequest(`Отсутствует имя пользователя`)
+        }
         const hashPassword = await bcrypt.hash(password, 3);
-        const activationLink = uuid.v4(); // v34fa-asfasf-142saf-sa-asf
+        const activationLink = uuid.v4();
         let favoriteFilmsDB = [];
         if (favoriteFilms) {
             favoriteFilmsDB = favoriteFilms
         }
-        console.log(123)
         const user = await UserModel.create({ email, name: name, password: hashPassword, activationLink, favoriteFilms: favoriteFilmsDB, picture: fileName })
         await mailService.sendActivationMail(email, `${process.env.API_URL}/api/activate/${activationLink}`);
 
-        const userDto = new UserDto(user); // id, email, isActivated
+        const userDto = new UserDto(user);
         const tokens = tokenService.generateTokens({ ...userDto });
         await tokenService.saveToken(userDto.id, tokens.refreshToken);
-
-        return { ...tokens, user: userDto }
+        if (user.picture) {
+            const userDtoPicture = new UserDtoPicture(user)
+            return { ...tokens, user: userDtoPicture }
+        } else {
+            return { ...tokens, user: userDto }
+        }
     }
 
     async activate(activationLink) {
@@ -53,7 +60,13 @@ class UserService {
         const tokens = tokenService.generateTokens({ ...userDto });
 
         await tokenService.saveToken(userDto.id, tokens.refreshToken);
-        return { ...tokens, user: userDto }
+        if (user.picture) {
+            const userDtoPicture = new UserDtoPicture(user)
+            return { ...tokens, user: userDtoPicture }
+        } else {
+            return { ...tokens, user: userDto }
+        }
+
     }
 
     async logout(refreshToken) {
@@ -113,6 +126,34 @@ class UserService {
         return updatedUser
     }
 
+    async updatePicture(id, picture) {
+        const userBeforeChangedPicture = await UserModel.findOne({ _id: id });
+        if (!userBeforeChangedPicture) {
+            throw ApiError.BadRequest('Пользователь не найден')
+        }
+
+        await UserModel.updateOne({ _id: id }, { $set: { picture, } })
+        const userWithUpdatedPicture = await UserModel.findOne({ _id: id });
+        if (!userWithUpdatedPicture) {
+            throw ApiError.BadRequest('Пользователь не найден')
+        }
+        return userWithUpdatedPicture
+    }
+
+    async updatePassword(id, password) {
+        const userBeforeChangePassword = await UserModel.findOne({ _id: id });
+        if (!userBeforeChangePassword) {
+            throw ApiError.BadRequest('Пользователь не найден')
+        }
+
+        const hashPassword = await bcrypt.hash(password, 3);
+        await UserModel.updateOne({ _id: id }, { $set: { password: hashPassword } })
+        const userWithUpdatedPassword = await UserModel.findOne({ _id: id });
+        if (!userWithUpdatedPassword) {
+            throw ApiError.BadRequest('Пользователь не найден')
+        }
+        return userWithUpdatedPassword
+    }
 }
 
 module.exports = new UserService();

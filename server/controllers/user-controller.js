@@ -11,13 +11,12 @@ class UserController {
                 return next(ApiError.BadRequest('Ошибка при валидации', errors.array()))
             }
             const { email, password, favoriteFilms, name } = req.body;
-            const fileName = '';
+            let fileName = '';
             if (req.files) {
                 const picture = req.files.picture
                 fileName = fileService.saveFile(picture)
             }
             const userData = await userService.registration(email, password, favoriteFilms, fileName, name);
-
             res.cookie('refreshToken', userData.refreshToken, { maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true })
             return res.json(userData);
         } catch (e) {
@@ -91,6 +90,55 @@ class UserController {
         try {
             const { user } = req.body;
             const updatedUser = await userService.updateUser(user);
+            return res.json(updatedUser);
+        } catch (e) {
+            next(e);
+        }
+    }
+    async updatePicture(req, res, next) {
+        try {
+            const { id } = req.body;
+            if (!id) {
+                return next(ApiError.BadRequest('Некорректный id пользователя', errors.array()))
+            }
+            if (!req.files) {
+                return next(ApiError.BadRequest('Изображение не передано', errors.array()))
+            }
+            const picture = req.files.picture
+            const fileName = fileService.saveFile(picture)
+            const updatedUser = await userService.updatePicture(id, fileName);
+            return res.json(updatedUser);
+        } catch (e) {
+            next(e);
+        }
+    }
+    async updatePicture(req, res, next) {
+        try {
+            const { id } = req.body;
+            if (!id) {
+                return next(ApiError.BadRequest('Некорректный id пользователя', errors.array()))
+            }
+            if (!req.files) {
+                return next(ApiError.BadRequest('Изображение не передано', errors.array()))
+            }
+            const picture = req.files.picture
+            const fileName = fileService.saveFile(picture)
+            const updatedUser = await userService.updatePicture(id, fileName);
+            return res.json(updatedUser);
+        } catch (e) {
+            next(e);
+        }
+    }
+    async updatePassword(req, res, next) {
+        try {
+            const { id, password } = req.body;
+            if (!id) {
+                return next(ApiError.BadRequest('Некорректный id пользователя', errors.array()))
+            }
+            if (!password) {
+                return next(ApiError.BadRequest('Пароль отсутствует', errors.array()))
+            }
+            const updatedUser = await userService.updatePassword(id, password)
             return res.json(updatedUser);
         } catch (e) {
             next(e);

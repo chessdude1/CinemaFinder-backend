@@ -17,5 +17,7 @@ router.get('/refresh', userController.refresh);
 router.get('/users', authMiddleware, userController.getUsers);
 router.get('/user', authMiddleware, userController.getUser);
 router.post('/user', authMiddleware, userController.updateUser);
+router.post('/user/picture', userController.updatePicture); //TODO add authMiddleware
+router.post('/user/password', userController.updatePassword);
 
 module.exports = router
